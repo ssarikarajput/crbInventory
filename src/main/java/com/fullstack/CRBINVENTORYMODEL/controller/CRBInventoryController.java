@@ -1,11 +1,11 @@
 package com.fullstack.CRBINVENTORYMODEL.controller;
 
 import com.fullstack.CRBINVENTORYMODEL.message.ResponseMessage;
-import com.fullstack.CRBINVENTORYMODEL.model.CustomerStaging;
-import com.fullstack.CRBINVENTORYMODEL.repository.CustomerAuditRepository;
-import com.fullstack.CRBINVENTORYMODEL.repository.CustomerMasterRepository;
-import com.fullstack.CRBINVENTORYMODEL.repository.CustomerStagingRepository;
-import com.fullstack.CRBINVENTORYMODEL.services.CustomerService;
+import com.fullstack.CRBINVENTORYMODEL.model.CRBInventoryStaging;
+import com.fullstack.CRBINVENTORYMODEL.repository.CRBInventoryAuditRepository;
+import com.fullstack.CRBINVENTORYMODEL.repository.CRBInventoryMasterRepository;
+import com.fullstack.CRBINVENTORYMODEL.repository.CRBInventoryStagingRepository;
+import com.fullstack.CRBINVENTORYMODEL.services.CRBInventoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,49 +20,52 @@ import java.util.List;
 public class CRBInventoryController {
 
     @Autowired
-    private CustomerStagingRepository customerStagingRepository;
+    private CRBInventoryStagingRepository CRBInventoryStagingRepository;
     @Autowired
-    private CustomerAuditRepository customerAuditRepository;
+    private CRBInventoryAuditRepository CRBInventoryAuditRepository;
     @Autowired
-    private CustomerService customerService;
+    private CRBInventoryService CRBInventoryService;
     @Autowired
-    private CustomerMasterRepository customerMasterRepository;
+    private CRBInventoryMasterRepository CRBInventoryMasterRepository;
 
     //entering a single record of the customer(REST)
     @PostMapping("/add")
-    public ResponseEntity addCustomers(@RequestBody(required = true) CustomerStaging customerStaging){
-        customerService.add(customerStaging);
-        return new ResponseEntity<CustomerStaging>(HttpStatus.CREATED);
+    public ResponseEntity addCustomers(@RequestBody(required = true) CRBInventoryStaging CRBInventoryStaging){
+        CRBInventoryService.add(CRBInventoryStaging);
+        String message = "Your Data has been added Successfully";
+        //return new ResponseEntity<CustomerStaging>(HttpStatus.CREATED);
+        return new ResponseEntity(message, HttpStatus.CREATED);
     }
 
     //displaying all the data of the customer_staging(REST)
     @GetMapping("/getAll")
-    public ResponseEntity<List<CustomerStaging>> getAllCustomersStaging(){
-       List<CustomerStaging> customerList =customerService.getAllCustomers();
+    public ResponseEntity<List<CRBInventoryStaging>> getAllCustomersStaging(){
+       List<CRBInventoryStaging> customerList = CRBInventoryService.getAllCustomers();
         return new ResponseEntity<>(customerList, HttpStatus.OK);
     }
 
     //get customer by ID REST
     @GetMapping("{stagingId}")
-    public ResponseEntity<CustomerStaging> getCustomerById(@PathVariable(value = "stagingId") Integer stagingId){
+    public ResponseEntity<CRBInventoryStaging> getCustomerById(@PathVariable(value = "stagingId") Integer stagingId){
         System.out.println("customerId........"+ stagingId);
-        CustomerStaging customer= customerService.getCustomerById(stagingId);
+        CRBInventoryStaging customer= CRBInventoryService.getCustomerById(stagingId);
         return new ResponseEntity<>(customer, HttpStatus.OK);
     }
 
     //update by id REST
     @PutMapping("{stagingId}")
-    public ResponseEntity<CustomerStaging> updateCustomer(@PathVariable(value = "stagingId") Integer stagingId, @RequestBody(required = true) CustomerStaging customer){
+    public ResponseEntity<CRBInventoryStaging> updateCustomer(@PathVariable(value = "stagingId") Integer stagingId, @RequestBody(required = true) CRBInventoryStaging customer){
         customer.setStagingId(stagingId);
-        customerService.updateCustomerDetails(customer);
-        return new ResponseEntity<>(HttpStatus.OK);
+        CRBInventoryService.updateCustomerDetails(customer);
+        String message = "Your Data has been Updated Successfully";
+        return new ResponseEntity(message, HttpStatus.OK);
     }
 
     //uploading Excel sheet data into the database(REST)
     @PostMapping("uploadFile")
     public ResponseEntity uploadExcelFile(@RequestParam("file") MultipartFile file) throws IOException {
         String message = "";
-        boolean isFlag = customerService.saveDataFromUploadFile(file);
+        boolean isFlag = CRBInventoryService.saveDataFromUploadFile(file);
         if(isFlag){
             try{
                     message = "Uploaded the file successfully: " + file.getOriginalFilename();
@@ -79,21 +82,41 @@ public class CRBInventoryController {
 
     //to get/display the "In-draft" data(REST)
     @GetMapping("/getDraft")
-    public List<CustomerStaging> getDraft(@RequestParam(value = "status" , required = false) String status){
-        List<CustomerStaging> customerList = customerService.getInDraft(status);
+    public List<CRBInventoryStaging> getDraft(@RequestParam(value = "status" , required = false) String status){
+        List<CRBInventoryStaging> customerList = CRBInventoryService.getInDraft(status);
         return customerList;
     }
 
     @GetMapping("/{stagingId}/{status}")
-    public CustomerStaging updateCustomerStatus(@PathVariable int stagingId, @PathVariable String status){
-        CustomerStaging cust = customerService.getCustomerById(stagingId);
+    public CRBInventoryStaging updateCustomerStatus(@PathVariable int stagingId, @PathVariable String status){
+        CRBInventoryStaging cust = CRBInventoryService.getCustomerById(stagingId);
         cust.setStatus(status);
-        CustomerStaging customer = customerService.updateStatus(cust);
+        CRBInventoryStaging customer = CRBInventoryService.updateStatus(cust);
          return customer;
     }
+    @PostMapping("{stagingId}")
+        public ResponseEntity submit(@PathVariable(value = "stagingId") Integer stagingId){
+        CRBInventoryStaging cust = CRBInventoryService.getCustomerById(stagingId);
+        cust.setStatus("InAprooval");
+        CRBInventoryStaging customer = CRBInventoryService.updateStatus(cust);
+        String message = "Succesfully submitted!";
+        return new ResponseEntity(message, HttpStatus.ACCEPTED);
+    }
+
+    @GetMapping("/getInAproval")
+    public List<CRBInventoryStaging> getInAproval(@RequestParam(value = "status" , required = false) String status){
+        List<CRBInventoryStaging> customerList = CRBInventoryService.getInAproval(status);
+        return customerList;
+    }
+
+
+
+
 
     // 1. inaproval
     // 2. getAllInaproval
+    // 3. ISIN
+
 
 //    @GetMapping("{status}")
 //    public CustomerStaging updateCustomerStatusToInapproval(@PathVariable int stagingId, @PathVariable String status){
